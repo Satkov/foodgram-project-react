@@ -18,8 +18,44 @@ INSTALLED_APPS = [
     'products',
     'users',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
+    'djoser',
 ]
+
+DJOSER = {
+    'SET_PASSWORD_RETYPE ': True,
+    'HIDE_USERS': False,
+    'SERIALIZERS': {
+            'user_create': 'users.serializers.UserSerializer',
+            'current_user': 'users.serializers.UserSerializer',
+            'user': 'users.serializers.UserSerializer',
+            'user_delete': 'djoser.serializers.UserDeleteSerializer',
+    },
+    'PERMISSIONS': {
+            "activation": ["rest_framework.permissions.IsAdminUser"],
+            "password_reset": ["rest_framework.permissions.AllowAny"],
+            "password_reset_confirm": ["rest_framework.permissions.AllowAny"],
+            "set_password": ["djoser.permissions.CurrentUserOrAdmin"],
+            "username_reset": ["rest_framework.permissions.IsAdminUser"],
+            "username_reset_confirm": ["rest_framework.permissions.IsAdminUser"],
+            "set_username": ["djoser.permissions.IsAdminUser"],
+            "user_create": ["rest_framework.permissions.AllowAny"],
+            "user_delete": ["djoser.permissions.IsAdminUser"],
+            "user": ["rest_framework.permissions.IsAuthenticated"],
+            "user_list": ["rest_framework.permissions.IsAuthenticated"],
+            "token_create": ["rest_framework.permissions.AllowAny"],
+            "token_destroy": ["djoser.permissions.CurrentUserOrAdmin"],
+        }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 5,
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -48,6 +84,8 @@ TEMPLATES = [
         },
     },
 ]
+
+AUTH_USER_MODEL = 'users.User'
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
