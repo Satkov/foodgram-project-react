@@ -30,6 +30,7 @@ class UserViewSet(DjoserUserViewSet):
             utils.logout_user(self.request)
         elif settings.CREATE_SESSION_ON_LOGIN:
             update_session_auth_hash(self.request, self.request.user)
+
         new_pass_data = {
                 "new_password": serializer.data["new_password"],
                 "current_password": serializer.data["new_password"]

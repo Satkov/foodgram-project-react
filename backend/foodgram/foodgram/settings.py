@@ -30,7 +30,6 @@ DJOSER = {
             'user_create': 'users.serializers.UserSerializer',
             'current_user': 'users.serializers.UserSerializer',
             'user': 'users.serializers.UserSerializer',
-            'user_delete': 'djoser.serializers.UserDeleteSerializer',
     },
     'PERMISSIONS': {
             "activation": ["rest_framework.permissions.IsAdminUser"],
@@ -122,3 +121,4 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')

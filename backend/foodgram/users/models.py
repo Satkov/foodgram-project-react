@@ -38,6 +38,3 @@ class Follow(models.Model):
         on_delete=models.CASCADE,
         related_name='following',
     )
-
-    def __str(self):
-        return f'{self.user} подписан на {self.author}'

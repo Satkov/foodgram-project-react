@@ -1,14 +1,18 @@
 from django.contrib import admin
-from .models import Ingredient, Tag, Recipe
+from .models import Ingredient, Tag, Recipe, Product
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('author', 'name', 'image', 'text',
-                    'time_to_cook', 'pub_date')
+    list_display = ('author', 'name', 'text',
+                    'cooking_time', 'pub_date')
+
+
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'measurement_unit')
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'amount', 'units')
+    list_display = ('name', 'Recipe', 'amount')
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -18,3 +22,4 @@ class TagAdmin(admin.ModelAdmin):
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Tag, TagAdmin)
+admin.site.register(Product, ProductAdmin)
