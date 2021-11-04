@@ -18,6 +18,9 @@ class Product(models.Model):
     measurement_unit = models.CharField(max_length=10, choices=UNITS_CHOICES)
     unique_together = [['name', 'measurement_unit']]
 
+    def __str__(self):
+        return self.name
+
 
 class Ingredient(models.Model):
     name = models.ForeignKey(Product, null=False, on_delete=models.CASCADE)

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from .models import Recipe, FavoriteRecipes, Tag, Ingredient, ShoppingCart, Product
 from users.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
@@ -19,7 +20,24 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
-class RecipeSerializer(serializers.ModelSerializer):
+class IngredientCreateSerializer(serializers.ModelSerializer):
+    id = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+
+    class Meta:
+        model = Ingredient
+        fields = ('id', 'amount')
+
+    def to_representation(self, value):
+        data = {
+            "id": value.id,
+            "name": value.name.name,
+            "measurement_unit": value.name.measurement_unit,
+            "amount": value.amount
+        }
+        return data
+
+
+class RecipeListSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     ingredients = IngredientSerializer(many=True, read_only=True)
@@ -33,18 +51,53 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'is_favorited', 'is_in_shopping_cart',
                   'name', 'image', 'text', 'cooking_time')
 
-    def create_ingredient(self, ingredients):
+    def get_is_favorited(self, obj):
+        current_user = self.context['request'].user
+        return FavoriteRecipes.objects.filter(user=current_user,
+                                              recipes=obj).exists()
+
+    def get_is_in_shopping_cart(self, obj):
+        current_user = self.context['request'].user
+        return ShoppingCart.objects.filter(user=current_user,
+                                           cart=obj).exists()
+
+
+class MyPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
+    def to_representation(self, value):
+        data = {
+            "id": value.id,
+            "name": value.name,
+            "color": value.color,
+            "slug": value.slug
+        }
+        return data
+
+
+class RecipeCreateSerializer(serializers.ModelSerializer):
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
+    ingredients = IngredientCreateSerializer(many=True)
+    author = UserSerializer(many=False, read_only=True)
+    image = Base64ImageField(required=True)
+    tags = MyPrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'tags', 'author', 'ingredients',
+                  'is_favorited', 'is_in_shopping_cart',
+                  'name', 'image', 'text', 'cooking_time')
+
+    def GetOrCreateIngredients(self, validated_data):
         ingredients_ids = []
-        for ingredient in ingredients:
-            obj = Ingredient.objects.get_or_create(
-                name=Product.objects.get(id=ingredient['id']),
-                amount=ingredient['amount']
+        for i in range(len(validated_data['ingredients'])):
+            ing = Ingredient.objects.get_or_create(
+                name=validated_data['ingredients'][i]['id'],
+                amount=validated_data['ingredients'][i]['amount']
             )
-            ingredients_ids.append(obj[0].id)
+            ingredients_ids.append(ing[0].id)
         return ingredients_ids
 
     def create(self, validated_data):
-        tags_ids = self.context['request'].data['tags']
         recipe = Recipe.objects.create(
             author=self.context['request'].user,
             name=validated_data['name'],
@@ -52,22 +105,19 @@ class RecipeSerializer(serializers.ModelSerializer):
             text=validated_data['text'],
             cooking_time=validated_data['cooking_time']
         )
-        request_ingredients_data = self.context['request'].data['ingredients']
-        ingredients_ids = self.create_ingredient(request_ingredients_data)
+        ingredients_ids = self.GetOrCreateIngredients(validated_data)
         recipe.ingredients.set(ingredients_ids)
-        recipe.tags.set(tags_ids)
+        recipe.tags.set(validated_data['tags'])
         return recipe
 
     def update(self, instance, validated_data):
-        tags_ids = self.context['request'].data['tags']
         instance.name = validated_data['name']
         instance.image = validated_data['image']
         instance.cooking_time = validated_data['cooking_time']
         instance.text = validated_data['text']
-        request_ingredients_data = self.context['request'].data['ingredients']
-        ingredients_ids = self.create_ingredient(request_ingredients_data)
+        ingredients_ids = self.GetOrCreateIngredients(validated_data)
         instance.ingredients.set(ingredients_ids)
-        instance.tags.set(tags_ids)
+        instance.tags.set(validated_data['tags'])
         return instance
 
     def get_is_favorited(self, obj):
