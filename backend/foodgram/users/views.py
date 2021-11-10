@@ -1,4 +1,4 @@
-from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash, get_user_model
 
 from djoser.conf import settings
 from djoser import utils
@@ -8,6 +8,9 @@ from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+
+User = get_user_model()
 
 
 class UserViewSet(DjoserUserViewSet):
@@ -36,3 +39,4 @@ class UserViewSet(DjoserUserViewSet):
                 "current_password": serializer.data["new_password"]
         }
         return Response(new_pass_data, status=status.HTTP_201_CREATED)
+

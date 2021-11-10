@@ -29,3 +29,6 @@ class UserSerializer(serializers.ModelSerializer):
         return Follow.objects.filter(user=obj,
                                      author=current_user.id).exists()
 
+
+
+
