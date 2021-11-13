@@ -67,6 +67,4 @@ class ShoppingCart(models.Model):
     user = models.ForeignKey(User, verbose_name='пользователь',
                              on_delete=models.CASCADE,
                              related_name='ShoppingCartUser')
-    cart = models.ForeignKey(Recipe, verbose_name='Корзина',
-                             on_delete=models.CASCADE,
-                             related_name='Cart')
+    cart = models.ManyToManyField(Recipe, blank=True)

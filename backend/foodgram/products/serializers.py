@@ -222,3 +222,26 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj).count()
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+    def validate(self, data):
+        recipe = Recipe.objects.get(id=data['id'])
+        if ShoppingCart.objects.filter(user=self.context['request'].user,
+                                       cart=recipe).exists():
+            raise serializers.ValidationError({
+                'errors': 'Рецепт уже находится в корзине'
+            })
+        return data
+
+    def create(self, validated_data):
+        recipe = Recipe.objects.get(id=validated_data['id'])
+        cart, created = ShoppingCart.objects.get_or_create(
+            user=self.context['request'].user
+        )
+        cart.cart.add(recipe)
+        return cart
