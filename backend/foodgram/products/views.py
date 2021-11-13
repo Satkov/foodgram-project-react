@@ -2,12 +2,12 @@ from io import BytesIO
 
 import django_filters
 from django.contrib.auth import get_user_model
-from django.http import FileResponse, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
@@ -19,7 +19,7 @@ from .filters import RecipesFilter
 from .serializers import RecipeListSerializer, RecipeCreateSerializer, TagSerializer, ProductSerializer, \
     FavoriteRecipesSerializer, FollowSerializer, ShoppingCartSerializer
 from .models import Recipe, Tag, FavoriteRecipes, Product, ShoppingCart
-from .permissions import IsAdminPermission, RecipeAccessPermission
+from .permissions import RecipePermission
 from users.models import Follow
 
 User = get_user_model()
@@ -29,7 +29,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filter_class = RecipesFilter
-    permission_classes = [IsAdminPermission, RecipeAccessPermission]
+    permission_classes = [RecipePermission]
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -42,7 +42,7 @@ class TagViewSet(mixins.RetrieveModelMixin,
                  GenericViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
-    permission_classes = [IsAdminPermission, RecipeAccessPermission]
+    permission_classes = [AllowAny]
 
 
 class IngredientViewSet(mixins.RetrieveModelMixin,
@@ -50,39 +50,39 @@ class IngredientViewSet(mixins.RetrieveModelMixin,
                         GenericViewSet):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
-    permission_classes = [IsAdminPermission, RecipeAccessPermission]
+    permission_classes = [AllowAny]
 
 
-class FavoriteApiView(APIView):
+class FavoriteViewSet(GenericViewSet):
     serializer_class = FavoriteRecipesSerializer
     queryset = Recipe.objects.all()
+    permission_classes = [IsAuthenticated]
 
-    # permission_classes = [IsAdminPermission, RecipeAccessPermission]
+    @action(detail=True, methods=['GET', 'DELETE'], url_path='favorite')
+    def favorite(self, request, pk=None):
+        instance = self.get_object()
+        if request.method == 'GET':
+            serializer = self.get_serializer(instance)
+            data = {'recipe_id': instance.id}
+            validated_data = serializer.validate(data)
+            serializer.create(validated_data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def get(self, request, recipe_id):
-        recipe = get_object_or_404(Recipe, pk=recipe_id)
-        data = {
-            "id": recipe.id,
-            "name": recipe.name,
-            "image": recipe.image,
-            "cooking_time": recipe.cooking_time
-        }
-        serializer = FavoriteRecipesSerializer(data=data, context={"request": request})
-        serializer.is_valid(raise_exception=True)
-        serializer.save(recipe_id=recipe_id)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def delete(self, request, recipe_id):
-        recipe = Recipe.objects.get(pk=recipe_id)
-        favor = FavoriteRecipes.objects.get(user=request.user,
-                                            recipes=recipe)
-        favor.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.method == 'DELETE':
+            favor_list = get_object_or_404(FavoriteRecipes, user=request.user)
+            if instance not in favor_list.recipes.all():
+                raise ValidationError({
+                    'errors': 'Рецепта нет в списке избранного'
+                })
+            favor_list.recipes.remove(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class FollowViewSet(mixins.ListModelMixin,
+                    GenericViewSet):
     serializer_class = FollowSerializer
     queryset = User.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         follows = Follow.objects.filter(user=self.request.user)
@@ -111,9 +111,10 @@ class FollowViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ShoppingCartViewSet(viewsets.ModelViewSet):
+class ShoppingCartViewSet(GenericViewSet):
     serializer_class = ShoppingCartSerializer
     queryset = Recipe.objects.all()
+    permission_classes = [IsAuthenticated]
 
     @action(detail=True, methods=['GET', 'DELETE'], url_path='shopping_cart')
     def add_or_delete_recipe_from_cart(self, request, pk=None):
@@ -138,9 +139,12 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
 
 
 class DownloadShoppingList(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         current_user = request.user
         cart = ShoppingCart.objects.get(user=current_user)
+
         # Считаем общую граммовку продуктов из всех рецептов
         ingredients = {}
         for recipe in cart.cart.all():
@@ -148,6 +152,7 @@ class DownloadShoppingList(APIView):
                 if ing.name not in ingredients:
                     ingredients[ing.name] = 0
                 ingredients[ing.name] += ing.amount
+
         # Создаем список ингридиентов, который передадим в PDF
         cart_list = []
         number = 1
@@ -155,13 +160,8 @@ class DownloadShoppingList(APIView):
             line = f'{number}) {ing.name} — {ingredients[ing]} {ing.measurement_unit}'
             cart_list.append(line)
             number += 1
-        # Создаем PDF файл
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = (
-            'attachment;'
-            ' filename="shopping_list.pdf.pdf"'
-        )
 
+        # Создаем PDF файл
         buffer = BytesIO()
         documentTitle = 'Список покупок'
         pdf = canvas.Canvas(buffer)
@@ -174,11 +174,16 @@ class DownloadShoppingList(APIView):
         text.setFont('main', 14)
         for line in cart_list:
             text.textLine(line)
-
         pdf.drawText(text)
         pdf.showPage()
         pdf.save()
         p = buffer.getvalue()
         buffer.close()
+
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = (
+            'attachment;'
+            'filename="shopping_list.pdf.pdf"'
+        )
         response.write(p)
         return response

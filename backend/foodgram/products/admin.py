@@ -20,7 +20,7 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('user', 'recipes')
+    list_display = ('user',)
 
 
 class ShoppingCartAdmin(admin.ModelAdmin):
