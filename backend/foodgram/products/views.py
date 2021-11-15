@@ -88,18 +88,26 @@ class FavoriteViewSet(GenericViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class FollowViewSet(mixins.ListModelMixin,
-                    GenericViewSet):
+class FollowViewSet(GenericViewSet):
     serializer_class = FollowSerializer
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
+    pagination_class = RecipePaginator
 
-    def get_queryset(self):
-        follows = Follow.objects.filter(user=self.request.user)
+    @action(detail=False, methods=['GET'], url_path='subscriptions')
+    def get_subscriptions(self, request):
+        follows = Follow.objects.filter(user=request.user)
         following = []
         for follow in follows:
             following.append(follow.author)
-        return following
+
+        page = self.paginate_queryset(following)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(following, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['GET', 'DELETE'], url_path='subscribe')
     def subscribe(self, request, pk=None):

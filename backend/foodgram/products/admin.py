@@ -5,9 +5,14 @@ from .models import (Ingredient, Tag, Recipe,
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('author', 'name')
+    list_display = ('author', 'name', 'get_followers')
     filter_horizontal = ('tags', 'ingredients')
     search_fields = ('name', 'author__username', 'tags__slug')
+
+    def get_followers(self, obj):
+        return FavoriteRecipes.objects.all().filter(recipes=obj).count()
+
+    get_followers.short_description = 'Followers'
 
 
 class ProductAdmin(admin.ModelAdmin):
@@ -16,6 +21,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('name', 'get_unit', 'amount')
+    search_fields = ('name',)
 
     def get_unit(self, obj):
         return obj.name.measurement_unit

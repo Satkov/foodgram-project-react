@@ -65,11 +65,15 @@ class RecipeListSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         current_user = self.context['request'].user
+        if current_user.is_anonymous:
+            return False
         return FavoriteRecipes.objects.filter(user=current_user,
                                               recipes=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
         current_user = self.context['request'].user
+        if current_user.is_anonymous:
+            return False
         return ShoppingCart.objects.filter(user=current_user,
                                            cart=obj).exists()
 
@@ -130,6 +134,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ingredients_ids = self.GetOrCreateIngredients(validated_data)
         instance.ingredients.set(ingredients_ids)
         instance.tags.set(validated_data['tags'])
+        instance.save()
         return instance
 
     def get_is_favorited(self, obj):

@@ -26,5 +26,5 @@ class UserSerializer(serializers.ModelSerializer):
         current_user = self.context['request'].user
         if current_user == obj:
             return True
-        return Follow.objects.filter(user=obj,
-                                     author=current_user.id).exists()
+        return Follow.objects.filter(user=current_user.id,
+                                     author=obj).exists()

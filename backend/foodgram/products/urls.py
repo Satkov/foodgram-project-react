@@ -13,7 +13,6 @@ router.register(r'recipes', ShoppingCartViewSet)
 router.register(r'recipes', FavoriteViewSet)
 router.register(r'tags', TagViewSet)
 router.register(r'ingredients', IngredientViewSet)
-router.register(r'users/subscriptions', FollowViewSet)
 router.register(r'users', FollowViewSet)
 
 urlpatterns = [

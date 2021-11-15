@@ -7,7 +7,7 @@ SECRET_KEY = os.environ.get(
     'l+57pdz1&9n(18h0vnm+pfjwd8nw(9r6$7_gtd2=+(s6tst8rc'
 )
 
-DEBUG = os.environ.get('DEBUG', 'TRUE').upper() == 'TRUE'
+DEBUG = os.environ.get('DEBUG', 'FALSE').upper() == 'TRUE'
 
 ALLOWED_HOSTS = ['*']
 
@@ -18,8 +18,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'products',
     'users',
+    'products',
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
@@ -35,7 +35,7 @@ DJOSER = {
             'user': 'users.serializers.UserSerializer',
     },
     'PERMISSIONS': {
-            "activation": ["rest_framework.permissions.IsAdminUser"],
+            "activation": ["rest_framework.permissions.AllowAny"],
             "password_reset": ["rest_framework.permissions.AllowAny"],
             "password_reset_confirm": ["rest_framework.permissions.AllowAny"],
             "set_password": ["djoser.permissions.CurrentUserOrAdmin"],
@@ -46,8 +46,8 @@ DJOSER = {
             "set_username": ["djoser.permissions.IsAdminUser"],
             "user_create": ["rest_framework.permissions.AllowAny"],
             "user_delete": ["djoser.permissions.IsAdminUser"],
-            "user": ["rest_framework.permissions.IsAuthenticated"],
-            "user_list": ["rest_framework.permissions.IsAuthenticated"],
+            "user": ["rest_framework.permissions.AllowAny"],
+            "user_list": ["rest_framework.permissions.AllowAny"],
             "token_create": ["rest_framework.permissions.AllowAny"],
             "token_destroy": ["djoser.permissions.CurrentUserOrAdmin"],
         }
