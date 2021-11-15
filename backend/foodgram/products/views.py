@@ -1,6 +1,6 @@
 from io import BytesIO
 
-import django_filters
+from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -15,21 +15,27 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 
-from .filters import RecipesFilter
-from .serializers import RecipeListSerializer, RecipeCreateSerializer, TagSerializer, ProductSerializer, \
-    FavoriteRecipesSerializer, FollowSerializer, ShoppingCartSerializer
+from .filters import RecipesFilter, IngredientFilter
+from .pagination import RecipePaginator
+from .serializers import (RecipeListSerializer, RecipeCreateSerializer,
+                          TagSerializer, ProductSerializer,
+                          FavoriteRecipesSerializer, FollowSerializer,
+                          ShoppingCartSerializer)
 from .models import Recipe, Tag, FavoriteRecipes, Product, ShoppingCart
 from .permissions import RecipePermission
+
 from users.models import Follow
+from foodgram import settings
 
 User = get_user_model()
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend]
     filter_class = RecipesFilter
     permission_classes = [RecipePermission]
+    pagination_class = RecipePaginator
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -43,6 +49,7 @@ class TagViewSet(mixins.RetrieveModelMixin,
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     permission_classes = [AllowAny]
+    pagination_class = None
 
 
 class IngredientViewSet(mixins.RetrieveModelMixin,
@@ -51,6 +58,9 @@ class IngredientViewSet(mixins.RetrieveModelMixin,
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
     permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend]
+    filter_class = IngredientFilter
+    pagination_class = None
 
 
 class FavoriteViewSet(GenericViewSet):
@@ -140,10 +150,11 @@ class ShoppingCartViewSet(GenericViewSet):
 
 class DownloadShoppingList(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = 'low_request'
 
     def get(self, request):
         current_user = request.user
-        cart = ShoppingCart.objects.get(user=current_user)
+        cart = get_object_or_404(ShoppingCart, user=current_user)
 
         # Считаем общую граммовку продуктов из всех рецептов
         ingredients = {}
@@ -157,7 +168,8 @@ class DownloadShoppingList(APIView):
         cart_list = []
         number = 1
         for ing in ingredients:
-            line = f'{number}) {ing.name} — {ingredients[ing]} {ing.measurement_unit}'
+            line = (f'{number}) {ing.name} — '
+                    f'{ingredients[ing]} {ing.measurement_unit}')
             cart_list.append(line)
             number += 1
 
@@ -166,12 +178,12 @@ class DownloadShoppingList(APIView):
         documentTitle = 'Список покупок'
         pdf = canvas.Canvas(buffer)
         pdfmetrics.registerFont(
-            TTFont('main', 'times.ttf')
+            TTFont('main', settings.STATIC_ROOT + '/timesnewroman.ttf')
         )
         pdf.setFont('main', 28)
         pdf.drawCentredString(300, 800, documentTitle)
         text = pdf.beginText(40, 740)
-        text.setFont('main', 14)
+        text.setFont('main', 24)
         for line in cart_list:
             text.textLine(line)
         pdf.drawText(text)

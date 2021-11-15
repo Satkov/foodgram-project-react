@@ -2,11 +2,14 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = '-q1j9q%8&*lw80jlci*-630g^-i6uzb7%!#o1-#*ut)zb!fw8b'
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'l+57pdz1&9n(18h0vnm+pfjwd8nw(9r6$7_gtd2=+(s6tst8rc'
+)
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'TRUE').upper() == 'TRUE'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -37,7 +40,9 @@ DJOSER = {
             "password_reset_confirm": ["rest_framework.permissions.AllowAny"],
             "set_password": ["djoser.permissions.CurrentUserOrAdmin"],
             "username_reset": ["rest_framework.permissions.IsAdminUser"],
-            "username_reset_confirm": ["rest_framework.permissions.IsAdminUser"],
+            "username_reset_confirm": [
+                "rest_framework.permissions.IsAdminUser"
+            ],
             "set_username": ["djoser.permissions.IsAdminUser"],
             "user_create": ["rest_framework.permissions.AllowAny"],
             "user_delete": ["djoser.permissions.IsAdminUser"],
@@ -52,12 +57,23 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 200,
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 6,
+    'DEFAULT_FILTER_BACKENDS':
+        ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '100000/day',
+        'anon': '10000/day',
+        'low_request': '3/minute',
+    }
 }
 
 MIDDLEWARE = [
@@ -92,10 +108,15 @@ AUTH_USER_MODEL = 'users.User'
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': os.getenv('DB_ENGINE'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT')
     }
 }
 
@@ -124,5 +145,8 @@ USE_L10N = True
 
 USE_TZ = True
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/backend_static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'backend_static')
+
+MEDIA_URL = "/backend_media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "backend_media")

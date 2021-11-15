@@ -27,7 +27,9 @@ class UserViewSet(DjoserUserViewSet):
         if settings.PASSWORD_CHANGED_EMAIL_CONFIRMATION:
             context = {"user": self.request.user}
             to = [get_user_email(self.request.user)]
-            settings.EMAIL.password_changed_confirmation(self.request, context).send(to)
+            settings.EMAIL.password_changed_confirmation(
+                self.request, context
+            ).send(to)
 
         if settings.LOGOUT_ON_PASSWORD_CHANGE:
             utils.logout_user(self.request)
@@ -39,4 +41,3 @@ class UserViewSet(DjoserUserViewSet):
                 "current_password": serializer.data["new_password"]
         }
         return Response(new_pass_data, status=status.HTTP_201_CREATED)
-

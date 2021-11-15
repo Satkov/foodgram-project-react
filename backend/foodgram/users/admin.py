@@ -3,7 +3,8 @@ from .models import User, Follow
 
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'username', 'password', 'first_name')
+    list_display = ('email', 'username', 'first_name', 'last_name')
+    search_fields = ['username', 'email']
 
 
 class FollowAdmin(admin.ModelAdmin):

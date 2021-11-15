@@ -13,11 +13,12 @@ class User(AbstractUser):
         'Разрешены символы русского и ангийского алфавитов.'
     )
 
-    email      = models.EmailField(verbose_name="email", max_length=254, unique=True)
-    username   = models.CharField(max_length=150,
-                                  unique=True,    validators=[alphanumeric])
+    email = models.EmailField(verbose_name="email", max_length=254,
+                              unique=True)
+    username = models.CharField(max_length=150, unique=True,
+                                validators=[alphanumeric])
     first_name = models.CharField(max_length=150, validators=[alphabetic])
-    last_name  = models.CharField(max_length=150, validators=[alphabetic])
+    last_name = models.CharField(max_length=150, validators=[alphabetic])
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

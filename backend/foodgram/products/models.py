@@ -26,6 +26,9 @@ class Ingredient(models.Model):
     name = models.ForeignKey(Product, null=False, on_delete=models.CASCADE)
     amount = models.IntegerField(verbose_name='Количество')
 
+    def __str__(self):
+        return self.name.name
+
 
 class Tag(models.Model):
     COLOR_CHOICES = [
@@ -38,31 +41,42 @@ class Tag(models.Model):
     color = models.CharField(max_length=100, choices=COLOR_CHOICES)
     slug = models.SlugField(verbose_name='Slug', max_length=30)
 
+    def __str__(self):
+        return self.name
+
 
 class Recipe(models.Model):
     author = models.ForeignKey(User, verbose_name='Автор',
                                on_delete=models.CASCADE,
                                related_name='author', null=False)
-    name = models.CharField(max_length=100, verbose_name='Название', null=False)
+    name = models.CharField(max_length=100, verbose_name='Название',
+                            null=False)
     image = models.ImageField(verbose_name="Картинка еды", upload_to='images')
     text = models.CharField(max_length=1000, verbose_name='Описание')
     ingredients = models.ManyToManyField(Ingredient, blank=False,
                                          related_name='Recipe')
     tags = models.ManyToManyField(Tag, blank=False)
-    cooking_time = models.IntegerField(verbose_name='Время приготовления', null=False)
+    cooking_time = models.IntegerField(verbose_name='Время приготовления',
+                                       null=False)
     pub_date = models.DateTimeField(verbose_name="Дата публикации",
-                                    auto_now_add=True, db_index=True, null=False)
+                                    auto_now_add=True, db_index=True,
+                                    null=False)
+
+    def __str__(self):
+        return self.name
 
 
 class FavoriteRecipes(models.Model):
     user = models.ForeignKey(User, verbose_name='пользователь',
                              on_delete=models.CASCADE,
                              related_name='FavoriteRecipesUser')
-    recipes = models.ManyToManyField(Recipe, blank=True)
+    recipes = models.ManyToManyField(Recipe, blank=True,
+                                     related_name='favorite_recipe')
 
 
 class ShoppingCart(models.Model):
     user = models.ForeignKey(User, verbose_name='пользователь',
                              on_delete=models.CASCADE,
-                             related_name='ShoppingCartUser')
-    cart = models.ManyToManyField(Recipe, blank=True)
+                             related_name='shoppingCartUser')
+    cart = models.ManyToManyField(Recipe, blank=True,
+                                  related_name='cart')

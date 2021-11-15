@@ -2,7 +2,8 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from .models import Recipe, FavoriteRecipes, Tag, Ingredient, ShoppingCart, Product
+from .models import (Recipe, FavoriteRecipes, Tag,
+                     Ingredient, ShoppingCart, Product)
 from users.models import Follow
 from users.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
@@ -152,12 +153,16 @@ class FavoriteRecipesSerializer(serializers.ModelSerializer):
         favorite_list, created = FavoriteRecipes.objects.get_or_create(
             user=self.context['request'].user)
         if recipe in favorite_list.recipes.all():
-            raise serializers.ValidationError('Вы уже подписаны на этот рецепт')
+            raise serializers.ValidationError(
+                'Вы уже подписаны на этот рецепт'
+            )
         return data
 
     def create(self, validated_data):
         recipe = Recipe.objects.get(pk=validated_data['recipe_id'])
-        favor_list = FavoriteRecipes.objects.get(user=self.context['request'].user)
+        favor_list = FavoriteRecipes.objects.get(
+            user=self.context['request'].user
+        )
         favor_list.recipes.add(recipe)
         return recipe
 

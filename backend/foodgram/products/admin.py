@@ -1,10 +1,13 @@
 from django.contrib import admin
-from .models import Ingredient, Tag, Recipe, Product, FavoriteRecipes, ShoppingCart
+from .models import (Ingredient, Tag, Recipe,
+                     Product, FavoriteRecipes,
+                     ShoppingCart)
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('author', 'name', 'text',
-                    'cooking_time', 'pub_date')
+    list_display = ('author', 'name')
+    filter_horizontal = ('tags', 'ingredients')
+    search_fields = ('name', 'author__username', 'tags__slug')
 
 
 class ProductAdmin(admin.ModelAdmin):
@@ -12,7 +15,13 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'Recipe', 'amount')
+    list_display = ('name', 'get_unit', 'amount')
+
+    def get_unit(self, obj):
+        return obj.name.measurement_unit
+
+    get_unit.short_description = 'Unit'
+    get_unit.admin_order_field = 'name__measurement_unit'
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -20,10 +29,12 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class FavoriteAdmin(admin.ModelAdmin):
+    filter_horizontal = ('recipes',)
     list_display = ('user',)
 
 
 class ShoppingCartAdmin(admin.ModelAdmin):
+    filter_horizontal = ('cart',)
     list_display = ('user',)
 
 
