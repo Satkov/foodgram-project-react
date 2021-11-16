@@ -10,7 +10,7 @@ class RecipeAdmin(admin.ModelAdmin):
     search_fields = ('name', 'author__username', 'tags__slug')
 
     def get_followers(self, obj):
-        return FavoriteRecipes.objects.all().filter(recipes=obj).count()
+        return FavoriteRecipes.objects.filter(recipes=obj).count()
 
     get_followers.short_description = 'Followers'
 
