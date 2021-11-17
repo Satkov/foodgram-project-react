@@ -116,7 +116,9 @@ class FollowViewSet(GenericViewSet):
             })
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(followings, many=True)
+        serializer = ListFollowersSerializer(followings, many=True, context={
+                'request': self.request
+            })
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['GET', 'DELETE'], url_path='subscribe')
