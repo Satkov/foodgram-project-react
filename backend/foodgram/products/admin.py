@@ -1,7 +1,7 @@
 from django.contrib import admin
-from .models import (Ingredient, Tag, Recipe,
-                     Product, FavoriteRecipes,
-                     ShoppingCart)
+
+from .models import (FavoriteRecipe, Ingredient, Product, Recipe, ShoppingCart,
+                     Tag)
 
 
 class RecipeAdmin(admin.ModelAdmin):
@@ -10,7 +10,7 @@ class RecipeAdmin(admin.ModelAdmin):
     search_fields = ('name', 'author__username', 'tags__slug')
 
     def get_followers(self, obj):
-        return FavoriteRecipes.objects.filter(recipes=obj).count()
+        return FavoriteRecipe.objects.filter(recipes=obj).count()
 
     get_followers.short_description = 'Followers'
 
@@ -20,14 +20,14 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'get_unit', 'amount')
-    search_fields = ('name',)
+    list_display = ('product', 'get_unit', 'amount')
+    search_fields = ('product__name',)
 
     def get_unit(self, obj):
-        return obj.name.measurement_unit
+        return obj.product.measurement_unit
 
     get_unit.short_description = 'Unit'
-    get_unit.admin_order_field = 'name__measurement_unit'
+    get_unit.admin_order_field = 'product__measurement_unit'
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -49,4 +49,4 @@ admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Product, ProductAdmin)
-admin.site.register(FavoriteRecipes, FavoriteAdmin)
+admin.site.register(FavoriteRecipe, FavoriteAdmin)

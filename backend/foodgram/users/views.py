@@ -1,14 +1,11 @@
-from django.contrib.auth import update_session_auth_hash, get_user_model
-
-from djoser.conf import settings
+from django.contrib.auth import get_user_model, update_session_auth_hash
 from djoser import utils
 from djoser.compat import get_user_email
+from djoser.conf import settings
 from djoser.views import UserViewSet as DjoserUserViewSet
-
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 
 User = get_user_model()
 
@@ -21,7 +18,9 @@ class UserViewSet(DjoserUserViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        self.request.user.set_password(serializer.data["new_password"])
+        self.request.user.set_password(
+            serializer.validated_data["new_password"]
+        )
         self.request.user.save()
 
         if settings.PASSWORD_CHANGED_EMAIL_CONFIRMATION:

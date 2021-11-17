@@ -1,5 +1,6 @@
-from .models import User, Follow
 from rest_framework import serializers
+
+from .models import Follow, User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -23,7 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def get_is_subscribed(self, obj):
-        current_user = self.context['request'].user
+        current_user = self.context.get('request').user
         if current_user == obj:
             return True
         return Follow.objects.filter(user=current_user.id,

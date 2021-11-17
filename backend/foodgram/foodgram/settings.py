@@ -7,7 +7,7 @@ SECRET_KEY = os.environ.get(
     'l+57pdz1&9n(18h0vnm+pfjwd8nw(9r6$7_gtd2=+(s6tst8rc'
 )
 
-DEBUG = os.environ.get('DEBUG', 'FALSE').upper() == 'TRUE'
+DEBUG = os.environ.get('DEBUG', 'TRUE').upper() == 'TRUE'
 
 ALLOWED_HOSTS = ['*']
 
@@ -108,7 +108,12 @@ AUTH_USER_MODEL = 'users.User'
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE'),

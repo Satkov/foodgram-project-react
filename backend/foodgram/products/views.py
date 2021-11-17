@@ -1,31 +1,27 @@
-from io import BytesIO
-
-from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status, mixins
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
-
-from .filters import RecipesFilter, IngredientFilter
-from .pagination import RecipePaginator
-from .serializers import (RecipeListSerializer, RecipeCreateSerializer,
-                          TagSerializer, ProductSerializer,
-                          FavoriteRecipesSerializer, FollowSerializer,
-                          ShoppingCartSerializer)
-from .models import Recipe, Tag, FavoriteRecipes, Product, ShoppingCart
-from .permissions import RecipePermission
-
 from users.models import Follow
-from foodgram import settings
+
+from .filters import IngredientFilter, RecipesFilter
+from .models import FavoriteRecipe, Product, Recipe, ShoppingCart, Tag
+from .pagination import LimitPaginator
+from .pdf_maker import (count_amount_of_all_ingredients_in_cart,
+                        create_list_of_str_of_ingredients, create_pdf)
+from .permissions import RecipePermission
+from .serializers import (FavoriteRecipesSerializer, FollowSerializer,
+                          ListFollowersSerializer, ProductSerializer,
+                          RecipeCreateSerializer, RecipeListSerializer,
+                          ShoppingCartSerializer, TagSerializer)
 
 User = get_user_model()
 
@@ -35,7 +31,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filter_class = RecipesFilter
     permission_classes = [RecipePermission]
-    pagination_class = RecipePaginator
+    pagination_class = LimitPaginator
+
+    @transaction.atomic()
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED,
+                        headers=headers)
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -64,7 +69,6 @@ class IngredientViewSet(mixins.RetrieveModelMixin,
 
 
 class FavoriteViewSet(GenericViewSet):
-    serializer_class = FavoriteRecipesSerializer
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -72,15 +76,24 @@ class FavoriteViewSet(GenericViewSet):
     def favorite(self, request, pk=None):
         instance = self.get_object()
         if request.method == 'GET':
-            serializer = self.get_serializer(instance)
-            data = {'recipe_id': instance.id}
-            validated_data = serializer.validate(data)
-            serializer.create(validated_data)
+            data = {
+                'id': instance.id,
+                'name': instance.name,
+                'image': instance.image,
+                'cooking_time': instance.cooking_time
+            }
+            serializer = FavoriteRecipesSerializer(data=data, context={
+                'recipe': instance,
+                'request': request
+            })
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
-            favor_list = get_object_or_404(FavoriteRecipes, user=request.user)
-            if instance not in favor_list.recipes.all():
+            favor_list = get_object_or_404(FavoriteRecipe, user=request.user)
+            if not FavoriteRecipe.objects.filter(user=request.user,
+                                                 recipes=instance).exists():
                 raise ValidationError({
                     'errors': 'Рецепта нет в списке избранного'
                 })
@@ -89,43 +102,51 @@ class FavoriteViewSet(GenericViewSet):
 
 
 class FollowViewSet(GenericViewSet):
-    serializer_class = FollowSerializer
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated]
-    pagination_class = RecipePaginator
+    pagination_class = LimitPaginator
 
     @action(detail=False, methods=['GET'], url_path='subscriptions')
     def get_subscriptions(self, request):
-        follows = Follow.objects.filter(user=request.user)
-        following = []
-        for follow in follows:
-            following.append(follow.author)
-
-        page = self.paginate_queryset(following)
+        followings = Follow.objects.get(user=request.user).author.all()
+        page = self.paginate_queryset(followings)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = ListFollowersSerializer(page, many=True, context={
+                'request': self.request
+            })
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(following, many=True)
+        serializer = self.get_serializer(followings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['GET', 'DELETE'], url_path='subscribe')
     def subscribe(self, request, pk=None):
         if request.method == 'GET':
             author = get_object_or_404(User, id=pk)
-            serializer = self.get_serializer(author)
             data = {
-                'author': author,
-                'user': request.user
+                'email': author.email,
+                'id': author.id,
+                'username': author.username,
+                'first_name': author.first_name,
+                'last_name': author.last_name,
             }
-            validated_data = serializer.validate(data)
-            serializer.create(validated_data)
+            serializer = FollowSerializer(data=data, context={
+                'request': request,
+                'author': author
+            })
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
             author = get_object_or_404(User, id=pk)
-            Follow.objects.get(user=request.user,
-                               author=author).delete()
+            follow = get_object_or_404(Follow, user=request.user)
+            if not Follow.objects.filter(user=request.user,
+                                         author=author).exists():
+                raise ValidationError({
+                    'errors': 'Вы не подписаны на этого автора'
+                })
+            follow.author.remove(author)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -138,17 +159,24 @@ class ShoppingCartViewSet(GenericViewSet):
     def add_or_delete_recipe_from_cart(self, request, pk=None):
         instance = self.get_object()
         if request.method == 'GET':
-            serializer = self.get_serializer(instance)
             data = {
-                'id': instance.id
+                'id': instance.id,
+                'name': instance.name,
+                'image': instance.image,
+                'cooking_time': instance.cooking_time,
             }
-            validated_data = serializer.validate(data)
-            serializer.create(validated_data)
+            serializer = ShoppingCartSerializer(data=data, context={
+                'request': request,
+                'recipe': instance
+            })
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
             cart = get_object_or_404(ShoppingCart, user=request.user)
-            if instance not in cart.cart.all():
+            if not ShoppingCart.objects.filter(user=request.user,
+                                               cart=instance).exists():
                 raise ValidationError({
                     'errors': 'Рецепта нет в корзине'
                 })
@@ -162,48 +190,14 @@ class DownloadShoppingList(APIView):
 
     def get(self, request):
         current_user = request.user
-        cart = get_object_or_404(ShoppingCart, user=current_user)
-
-        # Считаем общую граммовку продуктов из всех рецептов
-        ingredients = {}
-        for recipe in cart.cart.all():
-            for ing in recipe.ingredients.all():
-                if ing.name not in ingredients:
-                    ingredients[ing.name] = 0
-                ingredients[ing.name] += ing.amount
-
-        # Создаем список ингридиентов, который передадим в PDF
-        cart_list = []
-        number = 1
-        for ing in ingredients:
-            line = (f'{number}) {ing.name} — '
-                    f'{ingredients[ing]} {ing.measurement_unit}')
-            cart_list.append(line)
-            number += 1
-
-        # Создаем PDF файл
-        buffer = BytesIO()
-        documentTitle = 'Список покупок'
-        pdf = canvas.Canvas(buffer)
-        pdfmetrics.registerFont(
-            TTFont('main', settings.STATIC_ROOT + '/timesnewroman.ttf')
-        )
-        pdf.setFont('main', 28)
-        pdf.drawCentredString(300, 800, documentTitle)
-        text = pdf.beginText(40, 740)
-        text.setFont('main', 24)
-        for line in cart_list:
-            text.textLine(line)
-        pdf.drawText(text)
-        pdf.showPage()
-        pdf.save()
-        p = buffer.getvalue()
-        buffer.close()
+        ingredients = count_amount_of_all_ingredients_in_cart(current_user)
+        ingredients_list = create_list_of_str_of_ingredients(ingredients)
+        pdf = create_pdf(ingredients_list)
 
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = (
             'attachment;'
             'filename="shopping_list.pdf.pdf"'
         )
-        response.write(p)
+        response.write(pdf)
         return response

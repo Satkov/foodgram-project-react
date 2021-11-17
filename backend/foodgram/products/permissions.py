@@ -1,7 +1,4 @@
-from django.contrib.auth import get_user_model
-from rest_framework.permissions import BasePermission, SAFE_METHODS
-
-User = get_user_model()
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
 class RecipePermission(BasePermission):

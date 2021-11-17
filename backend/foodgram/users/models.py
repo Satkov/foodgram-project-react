@@ -1,6 +1,7 @@
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.db.models import UniqueConstraint
 
 
 class User(AbstractUser):
@@ -33,9 +34,13 @@ class Follow(models.Model):
         on_delete=models.CASCADE,
         related_name='follower',
     )
-    author = models.ForeignKey(
+    author = models.ManyToManyField(
         User,
-        null=True,
-        on_delete=models.CASCADE,
         related_name='following',
     )
+
+    class Meta:
+        UniqueConstraint(fields=['user', 'author'],
+                         name='unique_follow')
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
