@@ -14,3 +14,8 @@ docker exec -it <DOCKER_CONTAINER_ID> python manage.py migrate
 docker exec -it <DOCKER_CONTAINER_ID> python manage.py createsuperuser
 ```
 The project will be available at localhost
+
+## Author
+
+Georgy Satkov
+* [github/Satkov](https://github.com/Satkov)
