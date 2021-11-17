@@ -1,6 +1,6 @@
 # Foodgram
 
-Foodgram is an educational thesis project in Yandex.Practicum. This is a website for sharing recipes. The frontend is provided by Yandex, it is built on React. The backend is made by me on the basis of Django Rest Framework.
+Foodgram is an educational graduation project in Yandex.Practicum. This is a website for sharing recipes. The frontend is provided by Yandex, it is built on React. The backend is made by me on the basis of Django Rest Framework.
 
 ## Installation
 
