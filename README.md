@@ -9,11 +9,11 @@ The project is deployed using the Docker-compose. From the infra folder, run:
 ```bash
 docker-compose up --build
 
-docker exec -it <DOCKER_CONTAINER_ID> python manage.py migrate
+docker exec -it <DOCKER_BACKEND_CONTAINER_ID> python manage.py migrate
 
-docker exec -it <DOCKER_CONTAINER_ID> python manage.py createsuperuser
+docker exec -it <DOCKER_BACKEND_CONTAINER_ID> python manage.py createsuperuser
 ```
-The project will be available at localhost
+The project will be available at localhost.
 
 ## Author
 
