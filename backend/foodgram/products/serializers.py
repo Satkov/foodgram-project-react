@@ -140,7 +140,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request_data = self.context.get('request').data
-        print(validated_data)
         recipe = Recipe.objects.create(
             author=self.context.get('request').user,
             name=validated_data['name'],
@@ -148,7 +147,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             text=validated_data['text'],
             cooking_time=validated_data['cooking_time']
         )
-        print(validated_data)
         ingredients_ids = self.get_or_create_ingredients()
         recipe.ingredients.set(ingredients_ids)
         tags_ids = request_data.get('tags')
