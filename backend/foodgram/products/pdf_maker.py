@@ -15,9 +15,10 @@ def count_amount_of_all_ingredients_in_cart(current_user):
     ingredients = {}
     for ingredient_id in cart.cart.all().values_list('ingredients', flat=True):
         ing = get_object_or_404(Ingredient, id=ingredient_id)
-        if ing not in ingredients:
-            ingredients[ing] = 0
-        ingredients[ing] += ing.amount
+        key = f'{ing.product.name} ({ing.product.measurement_unit})'
+        if key  not in ingredients:
+            ingredients[key] = 0
+        ingredients[key] += ing.amount
     return ingredients
 
 
@@ -25,8 +26,8 @@ def create_list_of_str_of_ingredients(ingredients):
     ingredients_list = []
     number = 1
     for ing in ingredients.keys():
-        line = (f'{number}) {ing.product.name} — '
-                f'{ingredients[ing]} {ing.product.measurement_unit}')
+        line = (f'{number}) {ing} — '
+                f'{ingredients[ing]}')
         ingredients_list.append(line)
         number += 1
     return ingredients_list
@@ -51,3 +52,4 @@ def create_pdf(ingredients_list):
     pdf = buffer.getvalue()
     buffer.close()
     return pdf
+
