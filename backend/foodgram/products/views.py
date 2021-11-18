@@ -10,6 +10,7 @@ from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
+
 from users.models import Follow
 
 from .filters import IngredientFilter, RecipesFilter
@@ -108,7 +109,7 @@ class FollowViewSet(GenericViewSet):
 
     @action(detail=False, methods=['GET'], url_path='subscriptions')
     def get_subscriptions(self, request):
-        followings = Follow.objects.get(user=request.user).author.all()
+        followings = get_object_or_404(Follow, user=request.user).author.all()
         page = self.paginate_queryset(followings)
         if page is not None:
             serializer = ListFollowersSerializer(page, many=True, context={

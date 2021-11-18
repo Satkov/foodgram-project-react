@@ -27,8 +27,10 @@ class Product(models.Model):
                                         verbose_name='Единица измерения')
 
     class Meta:
-        UniqueConstraint(fields=['name', 'measurement_unit'],
-                         name='unique_product')
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'measurement_unit'],
+                                    name='unique_product')
+            ]
         verbose_name = 'Продукт'
         verbose_name_plural = 'Продукты'
 
@@ -37,14 +39,17 @@ class Product(models.Model):
 
 
 class Ingredient(models.Model):
-    product = models.ForeignKey(Product, null=False, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE,
+                                verbose_name='Продукт')
     amount = models.IntegerField(verbose_name='Количество')
 
     class Meta:
-        UniqueConstraint(fields=['product', 'amount'],
-                         name='unique_ingredients')
-        verbose_name = 'Ингридиент'
-        verbose_name_plural = 'Ингридиенты'
+        constraints = [
+            models.UniqueConstraint(fields=['product', 'amount'],
+                                    name='unique_ingredients')
+        ]
+        verbose_name = 'ингредиент'
+        verbose_name_plural = 'ингредиенты'
 
     def __str__(self):
         return self.product.name
@@ -62,12 +67,15 @@ class Tag(models.Model):
         (GREEN, 'Green'),
     ]
     name = models.CharField(max_length=100, verbose_name='Название')
-    color = models.CharField(max_length=100, choices=COLOR_CHOICES)
+    color = models.CharField(max_length=100, choices=COLOR_CHOICES,
+                             verbose_name='Цвет')
     slug = models.SlugField(verbose_name='Slug', max_length=30)
 
     class Meta:
-        UniqueConstraint(fields=['name', 'color', 'slug'],
-                         name='unique_tags')
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'color', 'slug'],
+                                    name='unique_tags')
+        ]
         verbose_name = 'Тэг'
         verbose_name_plural = 'Тэги'
 
@@ -84,7 +92,8 @@ class Recipe(models.Model):
     image = models.ImageField(verbose_name="Картинка еды", upload_to='images')
     text = models.CharField(max_length=1000, verbose_name='Описание')
     ingredients = models.ManyToManyField(Ingredient,
-                                         related_name='recipes')
+                                         related_name='recipes',
+                                         verbose_name='Ингредиент')
     tags = models.ManyToManyField(Tag)
     cooking_time = models.IntegerField(verbose_name='Время приготовления',
                                        null=False)
@@ -106,7 +115,8 @@ class FavoriteRecipe(models.Model):
                              on_delete=models.CASCADE,
                              related_name='FavoriteRecipesUser')
     recipes = models.ManyToManyField(Recipe, blank=True,
-                                     related_name='favorite_recipe')
+                                     related_name='favorite_recipe',
+                                     verbose_name='Рецепты')
 
     class Meta:
         UniqueConstraint(fields=['user', 'recipes'],
@@ -116,14 +126,17 @@ class FavoriteRecipe(models.Model):
 
 
 class ShoppingCart(models.Model):
-    user = models.ForeignKey(User, verbose_name='пользователь',
-                             on_delete=models.CASCADE,
-                             related_name='shoppingCartUser')
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name='shoppingCartUser',
+                             verbose_name='Пользователь')
     cart = models.ManyToManyField(Recipe, blank=True,
-                                  related_name='cart')
+                                  related_name='cart',
+                                  verbose_name='Рецепты')
 
     class Meta:
-        UniqueConstraint(fields=['user', 'cart'],
-                         name='unique_cart')
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'cart'],
+                                    name='unique_cart')
+        ]
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'

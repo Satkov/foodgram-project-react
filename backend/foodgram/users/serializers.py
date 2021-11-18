@@ -24,7 +24,12 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def get_is_subscribed(self, obj):
-        current_user = self.context.get('request').user
+        try:
+            current_user = self.context.get('request').user
+        except KeyError:
+            raise KeyError({
+                'error': 'request was not received'
+            })
         if current_user == obj:
             return True
         return Follow.objects.filter(user=current_user.id,
