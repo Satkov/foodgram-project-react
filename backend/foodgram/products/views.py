@@ -153,7 +153,6 @@ class FollowViewSet(GenericViewSet):
 
 
 class ShoppingCartViewSet(GenericViewSet):
-    serializer_class = ShoppingCartSerializer
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthenticated]
 
