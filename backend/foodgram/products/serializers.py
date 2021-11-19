@@ -5,21 +5,11 @@ from rest_framework import serializers
 
 from users.models import Follow
 from users.serializers import UserSerializer
-
 from .models import (FavoriteRecipe, Ingredient, Product, Recipe, ShoppingCart,
                      Tag)
+from .utils import get_request
 
 User = get_user_model()
-
-
-def get_request(context):
-    try:
-        request = context.get('request')
-    except KeyError:
-        raise KeyError({
-            'error': 'request was not received'
-        })
-    return request
 
 
 class ProductSerializer(serializers.ModelSerializer):

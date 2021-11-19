@@ -6,7 +6,6 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from foodgram import settings
-
 from .models import Ingredient, ShoppingCart
 
 
@@ -16,7 +15,7 @@ def count_amount_of_all_ingredients_in_cart(current_user):
     for ingredient_id in cart.cart.all().values_list('ingredients', flat=True):
         ing = get_object_or_404(Ingredient, id=ingredient_id)
         key = f'{ing.product.name} ({ing.product.measurement_unit})'
-        if key  not in ingredients:
+        if key not in ingredients:
             ingredients[key] = 0
         ingredients[key] += ing.amount
     return ingredients
@@ -52,4 +51,3 @@ def create_pdf(ingredients_list):
     pdf = buffer.getvalue()
     buffer.close()
     return pdf
-

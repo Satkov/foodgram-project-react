@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import UniqueConstraint
 
 User = get_user_model()
 
@@ -119,8 +118,10 @@ class FavoriteRecipe(models.Model):
                                      verbose_name='Рецепты')
 
     class Meta:
-        UniqueConstraint(fields=['user', 'recipes'],
-                         name='unique_favorite_recipe')
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'recipes'],
+                                    name='unique_favorite_recipe')
+        ]
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
 

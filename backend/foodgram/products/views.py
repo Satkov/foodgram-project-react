@@ -12,7 +12,6 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from users.models import Follow
-
 from .filters import IngredientFilter, RecipesFilter
 from .models import FavoriteRecipe, Product, Recipe, ShoppingCart, Tag
 from .pagination import LimitPaginator
