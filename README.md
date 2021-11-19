@@ -5,7 +5,7 @@ Foodgram is an educational graduation project in Yandex.Practicum. This is a web
 ## SERVER DATA
 * ip: 130.193.44.124
 
-* superuser email = test@mail.ru
+* superuser email = test@gmail.com
 
 * superuser pass = test
 
