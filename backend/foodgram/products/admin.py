@@ -16,11 +16,11 @@ class RecipeAdmin(admin.ModelAdmin):
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'measurement_unit')
+    list_display = ('id', 'name', 'measurement_unit')
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('product', 'get_unit', 'amount')
+    list_display = ('id', 'product', 'get_unit', 'amount')
     search_fields = ('product__name',)
 
     def get_unit(self, obj):
@@ -31,7 +31,7 @@ class IngredientAdmin(admin.ModelAdmin):
 
 
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'color', 'slug')
+    list_display = ('id', 'name', 'color', 'slug')
 
 
 class FavoriteAdmin(admin.ModelAdmin):

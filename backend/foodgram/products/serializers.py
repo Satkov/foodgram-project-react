@@ -25,6 +25,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="product.id")
     name = serializers.CharField(source="product.name")
     measurement_unit = serializers.CharField(source="product.measurement_unit")
 
@@ -116,6 +117,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 'errors': 'ингредиенты рецепта не должны повторяться'
             })
         tags = request_data.get('tags')
+
         if not all(isinstance(x, int) for x in tags):
             raise serializers.ValidationError({
                 'errors': 'id тэга должен быть числом'
