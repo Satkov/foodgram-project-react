@@ -36,7 +36,7 @@ class UserViewSet(DjoserUserViewSet):
             update_session_auth_hash(self.request, self.request.user)
 
         new_pass_data = {
-                "new_password": serializer.data["new_password"],
-                "current_password": serializer.data["new_password"]
+                "new_password": serializer.validated_data["new_password"],
+                "current_password": serializer.validated_data["new_password"]
         }
         return Response(new_pass_data, status=status.HTTP_201_CREATED)

@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import UniqueConstraint
 
 
 class User(AbstractUser):
@@ -40,7 +39,9 @@ class Follow(models.Model):
     )
 
     class Meta:
-        UniqueConstraint(fields=['user', 'author'],
-                         name='unique_follow')
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'author'],
+                                    name='unique_follow')
+        ]
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
