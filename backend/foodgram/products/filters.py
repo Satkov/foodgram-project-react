@@ -1,11 +1,13 @@
 import django_filters
 
-from .models import FavoriteRecipe, Product, Recipe, ShoppingCart
+from .models import FavoriteRecipe, Product, Recipe, ShoppingCart, Tag
 
 
 class RecipesFilter(django_filters.FilterSet):
-    tags = django_filters.CharFilter(
+    tags = django_filters.filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
+        to_field_name='slug',
+        queryset=Tag.objects.all(),
     )
     author = django_filters.NumberFilter(
         field_name='author__id'
