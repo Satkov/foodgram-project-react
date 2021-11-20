@@ -203,8 +203,7 @@ class FavoriteRecipesSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         recipe = self.context.get('recipe')
-        favor_list = get_object_or_404(
-            FavoriteRecipe,
+        favor_list = FavoriteRecipe.objects.get_or_create(
             user=get_request(self.context).user
         )
         favor_list.recipes.add(recipe)
