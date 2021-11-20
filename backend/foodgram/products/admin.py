@@ -5,7 +5,7 @@ from .models import (FavoriteRecipe, Ingredient, Product, Recipe, ShoppingCart,
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('author', 'name', 'get_followers')
+    list_display = ('id', 'author', 'name', 'get_followers')
     filter_horizontal = ('tags', 'ingredients')
     search_fields = ('name', 'author__username', 'tags__slug')
 
